@@ -3,39 +3,41 @@ import json
 
 class MyClient(discord.Client):
 
-    command = "$remove"
-
     async def on_ready(self):
         print(f'Logged on as {self.user}!')
 
     async def on_message(self, message):
         # setup
+        command = "$garbage"
         splitMessage = message.content.split()
-        user = message.author
-        channel = message.channel
 
         # guards
-        if not splitMessage[0] == "$remove":
+        if not splitMessage[0] == command:
             return
         del splitMessage[0]
         if not len(splitMessage) > 0:
             return
 
-        # success
-        await channel.send("Deleting your message...")
-        await message.delete()
-        await channel.send("Deleted message.")
-        await channel.send("Deleting messages containing the given words for user {}...".format(user))
+        # further setup now that we know the command is valid
+        user = message.author
+        channel = message.channel
+
+        # delete messages
         try:
+            await channel.send("Deleting your message...")
+            await message.delete()
+            await channel.send("Deleted message.")
+            await channel.send("Deleting messages containing the given words for user {}...".format(user))
             async for message in channel.history(limit=None):
-                print("running...")
-                for word in splitMessage:
-                    if word in message.content:
-                        await message.delete()
+                if message.author.id == user.id and any(word in message.content for word in splitMessage):
+                    await message.delete()
+            await channel.send("Finished deleting messages.")
         except Exception as e:
             print(e)
-        else:
-            await channel.send("Finished deleting messages.")
+            await channel.send("Error deleting messages, Will is a shitty programmer.")
+
+        # exit
+        return
 
 class DiscordDeleter:
 
